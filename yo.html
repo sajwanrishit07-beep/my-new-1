@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aura Weather • Premium</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS + JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ─────────── CYBER LUXURY UPGRADE ─────────── */
+
+/* Neon grid */
+.cyber-grid {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(125,211,252,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125,211,252,0.06) 1px, transparent 1px);
+  background-size: 70px 70px;
+  transform: perspective(900px) rotateX(60deg);
+  animation: gridFlow 18s linear infinite;
+  z-index: -4;
+}
+
+@keyframes gridFlow {
+  from { background-position: 0 0; }
+  to   { background-position: 0 700px; }
+}
+
+/* AI scanning light */
+.cyber-scan {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 40%,
+    rgba(140,180,255,0.12),
+    transparent 60%
+  );
+  animation: scanMove 6s infinite linear;
+  pointer-events: none;
+  z-index: -3;
+}
+
+@keyframes scanMove {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(100%); }
+}
+
+/* Film grain (luxury cinematic feel) */
+.cyber-noise {
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Chrome neon container edge */
+.container {
+  border: 1px solid rgba(140,180,255,0.35);
+  box-shadow:
+    0 0 60px rgba(125,211,252,0.35),
+    inset 0 0 40px rgba(255,255,255,0.06);
+}
+
+.container::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 48px;
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(125,211,252,0.45),
+    rgba(192,132,252,0.45),
+    transparent 80%
+  );
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* Cyber buttons */
+.btn, .tool-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after, .tool-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: translateX(-120%);
+}
+
+.btn:hover::after, .tool-btn:hover::after {
+  animation: cyberShine 0.8s ease;
+}
+
+@keyframes cyberShine {
+  to { transform: translateX(120%); }
+}
+
+/* Title glow pulse */
+h1 {
+  text-shadow:
+    0 0 25px rgba(125,211,252,0.6),
+    0 0 60px rgba(192,132,252,0.4);
+  animation: titlePulse 6s infinite ease-in-out;
+}
+
+@keyframes titlePulse {
+  0%,100% { filter: brightness(1); }
+  50%     { filter: brightness(1.25); }
+}
+
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-darker: #05070f;
+      --card-glass: rgba(20,25,40,0.75);
+      --card-border: rgba(255,255,255,0.12);
+      --text-primary: #f9fafb;
+      --text-secondary: #c7d2fe;
+      --text-muted: #94a3b8;
+      --accent: #7dd3fc;
+      --accent-dark: #38bdf8;
+      --accent-glow: rgba(125,211,252,0.35);
+      --sun-glow: rgba(253,224,71,0.45);
+      --overlay-dark: rgba(10,14,23,0.7);
+    }
+
+    [data-theme="light"] {
+      --bg-dark: #f1f5f9;
+      --bg-darker: #e2e8f0;
+      --card-glass: rgba(255,255,255,0.95);
+      --card-border: rgba(0,0,0,0.10);
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-dark: #2563eb;
+      --accent-glow: rgba(59,130,246,0.30);
+      --overlay-dark: rgba(241,245,249,0.7);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      background-size: cover;
+      background-position: center 25%;
+      background-attachment: fixed;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2.5rem 1.5rem;
+      transition: background 1.2s ease;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--overlay-dark);
+      z-index: -3;
+      transition: background 1s ease;
+    }
+
+    body.sunny::after, body.clear::after {
+      content: '';
+      position: absolute;
+      inset: -50%;
+      background: radial-gradient(circle at 50% 30%, var(--sun-glow) 0%, transparent 55%);
+      opacity: 0.65;
+      animation: sunPulse 16s ease-in-out infinite;
+      z-index: -2;
+    }
+
+    @keyframes sunPulse {
+      0%,100% { transform: scale(1); opacity: 0.5; }
+      50%     { transform: scale(1.4); opacity: 0.9; }
+    }
+
+    body.rain::before, body.drizzle::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(45deg, transparent 0, transparent 2px, rgba(96,165,250,0.2) 2px, rgba(96,165,250,0.2) 4px);
+      animation: rainFall 0.9s linear infinite;
+      z-index: -1;
+      opacity: 0.75;
+    }
+
+    @keyframes rainFall { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+
+    body.snow::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="2" fill="white"/></svg>') repeat;
+      background-size: 28px;
+      animation: snowFall 20s linear infinite;
+      opacity: 0.85;
+      z-index: -1;
+    }
+
+    @keyframes snowFall { 0% { transform: translateY(-100%) rotate(0deg); } 100% { transform: translateY(200%) rotate(360deg); } }
+
+    .container {
+      width: 100%;
+      max-width: 920px;
+      min-height: 880px;
+      background: var(--card-glass);
+      backdrop-filter: blur(36px);
+      border-radius: 48px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 50px 140px rgba(0,0,0,0.7), inset 0 0 100px rgba(255,255,255,0.07);
+      padding: 4.8rem 3.8rem 6rem;
+      position: relative;
+      z-index: 2;
+      transition: transform 0.45s ease, box-shadow 0.45s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-14px);
+      box-shadow: 0 70px 180px rgba(0,0,0,0.8), inset 0 0 120px rgba(255,255,255,0.09);
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 4.8rem;
+      font-weight: 900;
+      text-align: center;
+      background: linear-gradient(90deg, var(--accent), #c084fc, var(--accent-dark));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle { text-align:center; color:var(--text-muted); font-size:1.2rem; margin-bottom:2.5rem; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin: 2rem 0 3rem;
+    }
+
+    .search-group {
+      flex: 1;
+      min-width: 260px;
+      display: flex;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--card-border);
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 18px 26px;
+      font-size: 1.15rem;
+      background: transparent;
+      border: none;
+      color: inherit;
+      outline: none;
+    }
+
+    .btn {
+      padding: 0 2.4rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .tool-btn {
+      padding: 0.9rem 1.4rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--card-border);
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .lang-select {
+      padding: 0.9rem 1.2rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--card-border);
+      color: inherit;
+      font-size: 1rem;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,14,23,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+
+    .loading-overlay.active { opacity: 1; pointer-events: all; }
+
+    .spinner {
+      width: 64px; height: 64px;
+      border: 6px solid var(--accent-glow);
+      border-top: 6px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .weather-hero { text-align: center; opacity: 0; transform: translateY(50px); transition: all 1.2s ease; }
+    .weather-hero.visible { opacity: 1; transform: translateY(0); }
+
+    .main-icon { width: 160px; height: 160px; margin: 1.5rem auto; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5)); }
+
+    .city-title { font-size: 3.2rem; font-weight: 800; margin: 0.6rem 0; }
+    .temp-display { font-size: 8.5rem; font-weight: 900; background: linear-gradient(90deg, #f0f9ff, var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; line-height: 0.85; }
+
+    .condition-label { font-size: 1.9rem; color: var(--text-secondary); margin: 1rem 0 2rem; }
+
+    .uv-section {
+      margin: 1.8rem 0;
+      padding: 1.6rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+    }
+
+    .uv-value { font-size: 2.8rem; font-weight: 800; }
+
+    .uv-low    { color: #4ade80; }
+    .uv-mod    { color: #fde047; }
+    .uv-high   { color: #fb923c; }
+    .uv-vhigh  { color: #f87171; }
+    .uv-ext    { color: #a855f7; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.4rem;
+      margin: 2.5rem 0;
+    }
+
+    .stat-item {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.5rem 1.2rem;
+      text-align: center;
+    }
+
+    .stat-label { color: var(--text-muted); font-size: 1rem; margin-bottom: 0.6rem; }
+    .stat-value { font-size: 1.9rem; font-weight: 700; }
+
+    .forecast-header { font-size: 2rem; font-weight: 700; text-align: center; margin: 3.5rem 0 1.8rem; }
+
+    .forecast-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .forecast-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.4rem 1rem;
+      text-align: center;
+    }
+
+    .forecast-icon { width: 70px; height: 70px; margin: 0.8rem auto; }
+
+    .map-container, .chart-container {
+      margin: 3rem 0;
+      height: 320px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .credits {
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .container { max-width: 100%; padding: 3.6rem 2.6rem 5.2rem; border-radius: 36px; min-height: auto; }
+      h1 { font-size: 4.2rem; }
+      .temp-display { font-size: 7.2rem; }
+      .city-title { font-size: 2.8rem; }
+    }
+
+    @media (max-width: 600px) {
+      .main-icon { width: 120px; height: 120px; }
+      .temp-display { font-size: 6rem; }
+    }
+  </style>
+</head>
+<body data-theme="dark" class="clear">
+
+<div class="loading-overlay" id="loader"><div class="spinner"></div></div>
+
+<div class="container">
+  <h1>Aura Weather</h1>
+  <div class="subtitle">Premium • UV • Rainfall • Forecast</div>
+
+  <div class="controls">
+    <div class="search-group">
+      <input type="text" id="cityInput" placeholder="City name (e.g. Berlin)" autocomplete="off"/>
+      <button class="btn" onclick="fetchWeather()">Search</button>
+    </div>
+    <button class="tool-btn" onclick="getLocation()">My Location</button>
+    <button class="tool-btn" id="unitBtn" onclick="toggleUnit()">°C / °F</button>
+    <button class="tool-btn" id="themeBtn" onclick="toggleTheme()">Dark / Light</button>
+    <select class="lang-select" id="langSelect" onchange="changeLanguage()">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+      <option value="ru">Русский</option>
+      <option value="hi">हिन्दी</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ar">العربية</option>
+    </select>
+  </div>
+
+  <div id="errorMsg" style="color:#fca5a5; text-align:center; margin:1.5rem 0; display:none;"></div>
+
+  <div class="weather-hero" id="weatherContent">
+    <img id="mainIcon" class="main-icon" src="" alt="">
+
+    <div class="city-title" id="cityName"></div>
+    <div class="temp-display" id="temp"></div>
+    <div class="condition-label" id="condition"></div>
+
+    <div class="uv-section">
+      <div style="font-size:1.3rem; color:var(--text-muted); margin-bottom:0.6rem;" data-i18n="uv_index">UV Index</div>
+      <div class="uv-value" id="uv"></div>
+    </div>
+
+    <div id="moonPhase" style="font-size:2.8rem; margin:1rem 0; display:none;">🌙</div>
+
+    <div class="stats-grid" id="stats"></div>
+
+    <h2 class="forecast-header" data-i18n="forecast_3day">3-Day Forecast</h2>
+    <div class="forecast-container" id="forecast"></div>
+
+    <h2 class="forecast-header" data-i18n="hourly">Hourly Forecast (next 12h)</h2>
+    <div class="chart-container">
+      <canvas id="tempChart"></canvas>
+    </div>
+
+    <h2 class="forecast-header" data-i18n="location_map">Location Map</h2>
+    <div class="map-container" id="map"></div>
+
+    <div class="credits">
+      Developed by Rishit Sajwan (Roll No: 25SCS1003005027, IILM University) • Powered by WeatherAPI.com
+    </div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+const API_KEY = "d9b679563f144c2e8e7143425260402";
+let unit = localStorage.getItem("unit") || "c";
+let theme = localStorage.getItem("theme") || "dark";
+let currentLang = "en";
+let map = null;
+let chart = null;
+
+const i18n = {
+  en: { uv_index:"UV Index (Risk)", forecast_3day:"3-Day Forecast", hourly:"Hourly Forecast", location_map:"Location Map", feels_like:"Feels Like", humidity:"Humidity", wind:"Wind", pressure:"Pressure", visibility:"Visibility", cloud:"Clouds", sunrise: "Sunrise", sunset: "Sunset", aqi: "Air Quality" },
+  es: { uv_index:"Índice UV", forecast_3day:"Pronóstico 3 días", hourly:"Pronóstico por hora", location_map:"Mapa de ubicación", feels_like:"Sensación", humidity:"Humedad", wind:"Viento", pressure:"Presión", visibility:"Visibilidad", cloud:"Nubes", sunrise: "Amanecer", sunset: "Atardecer", aqi: "Calidad del Aire" },
+  fr: { uv_index:"Indice UV", forecast_3day:"Prévisions 3 jours", hourly:"Prévisions horaires", location_map:"Carte de localisation", feels_like:"Ressenti", humidity:"Humidité", wind:"Vent", pressure:"Pression", visibility:"Visibilité", cloud:"Nuages", sunrise: "Lever du soleil", sunset: "Coucher du soleil", aqi: "Qualité de l'air" },
+  de: { uv_index:"UV-Index", forecast_3day:"3-Tage-Vorhersage", hourly:"Stündliche Vorhersage", location_map:"Standortkarte", feels_like:"Gefühlt", humidity:"Luftfeuchtigkeit", wind:"Wind", pressure:"Druck", visibility:"Sicht", cloud:"Wolken", sunrise: "Sonnenaufgang", sunset: "Sonnenuntergang", aqi: "Luftqualität" },
+  it: { uv_index:"Indice UV", forecast_3day:"Previsioni 3 giorni", hourly:"Previsioni orarie", location_map:"Mappa posizione", feels_like:"Percepito", humidity:"Umidità", wind:"Vento", pressure:"Pressione", visibility:"Visibilità", cloud:"Nuvole", sunrise: "Alba", sunset: "Tramonto", aqi: "Qualità dell'aria" },
+  pt: { uv_index:"Índice UV", forecast_3day:"Previsão 3 dias", hourly:"Previsão horária", location_map:"Mapa de localização", feels_like:"Sensação", humidity:"Umidade", wind:"Vento", pressure:"Pressão", visibility:"Visibilidade", cloud:"Nuvens", sunrise: "Nascer do sol", sunset: "Pôr do sol", aqi: "Qualidade do ar" },
+  ru: { uv_index:"УФ-индекс", forecast_3day:"Прогноз на 3 дня", hourly:"Почасовой прогноз", location_map:"Карта местоположения", feels_like:"Ощущается", humidity:"Влажность", wind:"Ветер", pressure:"Давление", visibility:"Видимость", cloud:"Облачность", sunrise: "Восход солнца", sunset: "Закат солнца", aqi: "Качество воздуха" },
+  hi: { uv_index:"यूवी सूचकांक", forecast_3day:"3-दिन का पूर्वानुमान", hourly:"प्रति घंटा पूर्वानुमान", location_map:"स्थान मानचित्र", feels_like:"महसूस हो रहा है", humidity:"नमी", wind:"हवा", pressure:"दबाव", visibility:"दृश्यता", cloud:"बादल", sunrise: "सूर्योदय", sunset: "सूर्यास्त", aqi: "वायु गुणवत्ता" },
+  zh: { uv_index:"紫外线指数", forecast_3day:"3天预报", hourly:"逐小时预报", location_map:"位置地图", feels_like:"体感", humidity:"湿度", wind:"风速", pressure:"气压", visibility:"能见度", cloud:"云量", sunrise: "日出", sunset: "日落", aqi: "空气质量" },
+  ja: { uv_index:"UV指数", forecast_3day:"3日予報", hourly:"時間ごとの予報", location_map:"位置マップ", feels_like:"体感", humidity:"湿度", wind:"風速", pressure:"気圧", visibility:"視程", cloud:"雲量", sunrise: "日の出", sunset: "日没", aqi: "空気質" },
+  ar: { uv_index:"مؤشر الأشعة فوق البنفسجية", forecast_3day:"توقعات 3 أيام", hourly:"التوقعات الساعية", location_map:"خريطة الموقع", feels_like:"الإحساس", humidity:"الرطوبة", wind:"الرياح", pressure:"الضغط", visibility:"الرؤية", cloud:"الغيوم", sunrise: "شروق الشمس", sunset: "غروب الشمس", aqi: "جودة الهواء" }
+};
+
+document.documentElement.setAttribute("data-theme", theme);
+document.getElementById("unitBtn").textContent = unit === "c" ? "°C / °F" : "°F / °C";
+document.getElementById("themeBtn").textContent = theme === "dark" ? "Dark / Light" : "Light / Dark";
+document.getElementById("langSelect").value = currentLang;
+
+function $(id) { return document.getElementById(id); }
+
+function changeLanguage() {
+  currentLang = $("langSelect").value;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (i18n[currentLang]?.[key]) el.textContent = i18n[currentLang][key];
+  });
+}
+
+async function fetchWeather(city = "Gurugram") {
+  showLoader(true);
+  hideError();
+
+  try {
+    const nowRes = await fetch(`https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${encodeURIComponent(city)}&aqi=yes`);
+    if (!nowRes.ok) throw new Error(nowRes.status === 400 ? "City not found" : "API error");
+    const now = await nowRes.json();
+    if (!now?.current || !now?.location) throw new Error("Invalid weather data");
+
+    const foreRes = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${encodeURIComponent(city)}&days=3&aqi=yes`);
+    if (!foreRes.ok) throw new Error("Forecast fetch failed");
+    const fore = await foreRes.json();
+
+    render(now.current, now.location, fore.forecast?.forecastday || [], fore);
+    applyBackground(now.current, now.location, now.location.localtime);
+    renderMap(now.location.lat, now.location.lon);
+    renderHourlyChart(fore.forecast?.forecastday?.[0]?.hour || []);
+
+  } catch (e) {
+    console.error(e);
+    showError(e.message || "Something went wrong");
+  } finally {
+    showLoader(false);
+  }
+}
+
+function render(current, loc, forecastDays, fore) {
+  $("cityName").textContent = loc.name + (loc.country ? `, ${loc.country}` : "");
+  $("condition").textContent = current.condition?.text || "Unknown";
+  $("mainIcon").src = current.condition?.icon ? "https:" + current.condition.icon.replace("64x64","128x128") : "";
+
+  const temp = unit === "c" ? Math.round(current.temp_c) : Math.round(current.temp_f);
+  $("temp").textContent = temp;
+
+  const feels = unit === "c" ? Math.round(current.feelslike_c) : Math.round(current.feelslike_f);
+  const wind = unit === "c" ? Math.round(current.wind_kph) + " km/h" : Math.round(current.wind_mph) + " mph";
+
+  const uv = current.uv || 0;
+  let uvClass = "uv-low", uvRisk = "Low";
+  if (uv >= 3)  { uvClass = "uv-mod"; uvRisk = "Moderate"; }
+  if (uv >= 6)  { uvClass = "uv-high"; uvRisk = "High"; }
+  if (uv >= 8)  { uvClass = "uv-vhigh"; uvRisk = "Very High"; }
+  if (uv >= 11) { uvClass = "uv-ext"; uvRisk = "Extreme"; }
+
+  $("uv").textContent = `${uv} – ${uvRisk}`;
+  $("uv").className = `uv-value ${uvClass}`;
+
+  const stats = [
+    { label:"feels_like", val: feels + "°" + unit.toUpperCase() },
+    { label:"humidity",   val: current.humidity + "%" },
+    { label:"wind",       val: wind },
+    { label:"pressure",   val: current.pressure_mb + " hPa" },
+    { label:"visibility", val: current.vis_km + " km" },
+    { label:"cloud",      val: current.cloud + "%" },
+    // ── New ───────────────────────────────────────
+    { label: "sunrise",     val: fore.forecast?.forecastday?.[0]?.astro?.sunrise || "—"},
+    { label: "sunset",      val: fore.forecast?.forecastday?.[0]?.astro?.sunset  || "—"},
+    { label: "aqi",         val: current.air_quality?.["us-epa-index"] 
+                                ? ["Good","Moderate","Unhealthy SG","Unhealthy","Very Unhealthy","Hazardous"][current.air_quality["us-epa-index"]-1] 
+                                : "—" 
+    }
+  ];
+
+  $("stats").innerHTML = stats.map(s => `
+    <div class="stat-item">
+      <div class="stat-label" data-i18n="${s.label}">${i18n[currentLang]?.[s.label] || s.label}</div>
+      <div class="stat-value">${s.val}</div>
+    </div>
+  `).join("");
+
+  // 3-day forecast
+  const fc = $("forecast");
+  fc.innerHTML = "";
+  forecastDays.forEach(day => {
+    const d = new Date(day.date);
+    const name = d.toLocaleDateString("en-US", {weekday:"short"});
+    const t = unit === "c" ? Math.round(day.day.avgtemp_c) : Math.round(day.day.avgtemp_f);
+
+    const card = document.createElement("div");
+    card.className = "forecast-card";
+    card.innerHTML = `
+      <div style="font-weight:600;">${name}</div>
+      <img class="forecast-icon" src="https:${day.day.condition?.icon || ''}">
+      <div style="font-size:1.7rem; font-weight:700;">${t}°</div>
+      <div style="color:var(--text-muted); font-size:0.9rem;">${day.day.condition?.text || ''}</div>
+    `;
+    fc.appendChild(card);
+  });
+
+  // Moon phase
+  const phase = fore.forecast?.forecastday?.[0]?.astro?.moon_phase || "";
+  const moonEmoji = {
+    "New Moon": "🌑", "Waxing Crescent": "🌒", "First Quarter": "🌓", "Waxing Gibbous": "🌔",
+    "Full Moon": "🌕", "Waning Gibbous": "🌖", "Last Quarter": "🌗", "Waning Crescent": "🌘"
+  }[phase] || "🌙";
+
+  const moonEl = $("moonPhase");
+  const localHour = new Date(loc.localtime).getHours();
+  const isDay = localHour >= 6 && localHour < 18;
+  if (!isDay) {
+    moonEl.textContent = moonEmoji + "  " + phase;
+    moonEl.style.display = "block";
+  } else {
+    moonEl.style.display = "none";
+  }
+
+  $("weatherContent").classList.add("visible");
+  changeLanguage();
+}
+
+function renderHourlyChart(hours) {
+  const labels = [];
+  const temps = [];
+
+  hours.slice(0,12).forEach(h => {
+    const hour = new Date(h.time).getHours();
+    labels.push(hour + ":00");
+    temps.push(unit === "c" ? h.temp_c : h.temp_f);
+  });
+
+  if (chart) chart.destroy();
+
+  chart = new Chart($("tempChart"), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Temperature',
+        data: temps,
+        borderColor: 'rgba(125, 211, 252, 0.9)',
+        backgroundColor: 'rgba(125, 211, 252, 0.25)',
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: false, ticks: { color: 'rgba(255,255,255,0.7)' } },
+        x: { ticks: { color: 'rgba(255,255,255,0.7)' } }
+      },
+      plugins: { legend: { labels: { color: 'white' } } }
+    }
+  });
+}
+
+function renderMap(lat, lon) {
+  if (map) map.remove();
+  map = L.map('map').setView([lat, lon], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  L.marker([lat, lon]).addTo(map).bindPopup("Here").openPopup();
+}
+
+function applyBackground(current, loc, localtime) {
+  if (!current || !loc) return;
+
+  const cond = (current.condition?.text || "").toLowerCase();
+  let hour = new Date().getHours();
+
+  if (localtime && !isNaN(Date.parse(localtime))) {
+    const localDate = new Date(localtime);
+    hour = localDate.getHours();
+  }
+
+  const isDay = hour >= 6 && hour < 18;   // rough day/night split
+
+  // ── Background choices ────────────────────────────────────────
+  const backgrounds = {
+    // Day
+    sunnyDay:    "https://images.unsplash.com/photo-1622278647429-7e25512e3b26?auto=format&fit=crop&w=2400&q=80",
+    clearDay:    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2400&q=80",
+    cloudyDay:   "https://images.unsplash.com/photo-1492011221366-f6a65d78b667?auto=format&fit=crop&w=2400&q=80",
+    rainDay:     "https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=2400&q=80",
+    snowDay:     "https://images.unsplash.com/photo-1542601098-3adb3c4f517a?auto=format&fit=crop&w=2400&q=80",
+
+    // Night / evening
+    clearNight:  "https://images.unsplash.com/photo-1533135227137-7610789810cf?auto=format&fit=crop&w=2400&q=80",
+    moonNight:   "https://images.unsplash.com/photo-1532693322450-2cb5c511067c?auto=format&fit=crop&w=2400&q=80",
+    rainNight:   "https://images.unsplash.com/photo-1519750783827-eb996f4c496e?auto=format&fit=crop&w=2400&q=80",
+    cloudyNight: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2400&q=80", // fallback
+    snowNight:   "https://images.unsplash.com/photo-1612208695882-02f2322b7fee?auto=format&fit=crop&w=2400&q=80",
+  };
+
+  let bgKey = "clearDay";
+
+  if (isDay) {
+    if (cond.includes("sunny") || cond.includes("clear")) bgKey = "sunnyDay";
+    else if (cond.includes("cloud") || cond.includes("overcast")) bgKey = "cloudyDay";
+    else if (/rain|shower|drizzle|thunder/.test(cond)) bgKey = "rainDay";
+    else if (/snow|sleet/.test(cond)) bgKey = "snowDay";
+  } else {
+    // Night
+    if (cond.includes("clear")) bgKey = "clearNight";
+    else if (cond.includes("moon") || cond.includes("clear")) bgKey = "moonNight";
+    else if (/rain|shower|drizzle|thunder/.test(cond)) bgKey = "rainNight";
+    else if (cond.includes("cloud") || cond.includes("overcast")) bgKey = "cloudyNight";
+    else if (/snow|sleet/.test(cond)) bgKey = "snowNight";
+    else bgKey = "moonNight"; // default night
+  }
+
+  const bgUrl = backgrounds[bgKey] || backgrounds.clearDay;
+
+  document.body.style.backgroundImage = `url('${bgUrl}')`;
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backgroundPosition = "center 30%";   // slightly higher for better composition
+  document.body.style.backgroundAttachment = "fixed";
+
+  // Still keep weather class for overlay effects (rain/snow/sun glow)
+  ["sunny","clear","rain","snow"].forEach(c => document.body.classList.remove(c));
+  let weatherClass = isDay ? "clear" : "clear"; // base
+
+  if (cond.includes("sunny") || cond.includes("clear")) weatherClass = "sunny";
+  else if (/rain|shower|drizzle|thunder/.test(cond)) weatherClass = "rain";
+  else if (/snow|sleet/.test(cond)) weatherClass = "snow";
+
+  document.body.classList.add(weatherClass);
+}
+
+function toggleUnit() {
+  unit = unit === "c" ? "f" : "c";
+  localStorage.setItem("unit", unit);
+  document.getElementById("unitBtn").textContent = unit === "c" ? "°C / °F" : "°F / °C";
+  const city = $("cityName").textContent?.split(",")[0]?.trim() || "Gurugram";
+  fetchWeather(city);
+}
+
+function toggleTheme() {
+  theme = theme === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", theme);
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("themeBtn").textContent = theme === "dark" ? "Dark / Light" : "Light / Dark";
+}
+
+async function getLocation() {
+  if (!navigator.geolocation) return showError("Geolocation not supported");
+  navigator.geolocation.getCurrentPosition(
+    pos => fetchWeather(`${pos.coords.latitude},${pos.coords.longitude}`),
+    () => showError("Location permission denied")
+  );
+}
+
+function showLoader(show) { $("loader").classList.toggle("active", show); }
+function showError(msg) { $("errorMsg").textContent = msg; $("errorMsg").style.display = "block"; }
+function hideError() { $("errorMsg").style.display = "none"; }
+
+$("cityInput").onkeypress = e => { if (e.key === "Enter") fetchWeather(e.target.value.trim()); };
+
+// Init with your city
+fetchWeather();
+</script>
+<!-- Cyber HUD Corners -->
+<div class="hud hud-top-left"></div>
+<div class="hud hud-top-right"></div>
+<div class="hud hud-bottom-left"></div>
+<div class="hud hud-bottom-right"></div>
+
+<!-- Floating Cyber Lines -->
+<div class="cyber-line line-1"></div>
+<div class="cyber-line line-2"></div>
+<div class="cyber-line line-3"></div>
+
+</body>
+</html>
